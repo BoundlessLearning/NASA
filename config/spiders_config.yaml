@@ -1,0 +1,11 @@
+enabled_proxy_spiders:
+  - name: proxyscrapeSpider
+    display_name: "ProxyScrape API"
+  # - name: socksproxySpider
+  #   display_name: "Socks Proxy Spider"
+  # - name: sslproxiesSpider
+  #   display_name: "SSL Proxies Spider"
+
+enabled_novel_spiders:
+  - name: FanqieNovelSpider
+    display_name: "番茄小说网"
