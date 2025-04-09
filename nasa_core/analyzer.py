@@ -60,7 +60,7 @@ class KeywordAnalyzer:
             if isinstance(counts, dict):
                 return counts
         except Exception as e:
-            print(f"LLM 分析失败: {e}")
+            logger.error(f"LLM 分析失败: {e}")
             return {}
 
 
