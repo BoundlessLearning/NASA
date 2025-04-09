@@ -21,3 +21,9 @@ FANQIE_URL = {
 }
 
 BASE_URL = 'https://fanqienovel.com'
+
+# 爬取规则
+# SIMPLE-只爬取书籍标题和简介、不爬取标签
+# FULL-爬取书籍标题、简介和标签，爬取标签需要遍历书籍详情页
+
+CRAWL_RULE = "SIMPLE"

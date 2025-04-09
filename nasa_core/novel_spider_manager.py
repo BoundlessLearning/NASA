@@ -1,9 +1,9 @@
 import json
-from nasa_core.analyzer import Analyzer
+from nasa_core.analyzer import KeywordAnalyzer, WordCloudGenerator
 from typing import Dict
 import os
 import yaml
-from config.settings import BASE_DIR, CONFIG_DIR
+from config.settings import BASE_DIR, CONFIG_DIR, ANALYZER_MODE
 from nasa_core.base_spider import BaseSpider
 import importlib
 from utils.logger import get_logger
@@ -90,16 +90,16 @@ class NovelSpiderManager:
                     continue
 
                 # 分析数据
-                analyzer = Analyzer(self.keyword_dict)
-                self.feature_counts[name] = analyzer.count_keywords_flashtext(processed_text)
+                analyzer = KeywordAnalyzer(self.keyword_dict)
+                self.feature_counts[name] = analyzer.count_keywords(processed_text, mode=ANALYZER_MODE)
             except Exception as e:
                 logger.error(f"[{name}] 执行失败：{e}")
                 continue
         # 生成词云
         if self.feature_counts:
-            analyzer = Analyzer(self.keyword_dict)
-            wordclouds = analyzer.generate_wordclouds(self.feature_counts, font_path=self.font_path)
-            analyzer.show_wordcloud(wordclouds)
+            word_cloud_generator = WordCloudGenerator(self.font_path)
+            wordclouds = word_cloud_generator.generate_wordcloud(self.feature_counts)
+            word_cloud_generator.show_wordcloud(wordclouds)
         else:
             logger.info("所有爬虫均未检测到任何关键词。")
 

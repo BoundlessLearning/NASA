@@ -3,7 +3,7 @@ from parsel import Selector
 from nasa_core.base_spider import BaseSpider
 from utils.logger import get_logger
 from nasa_core.proxies_manager import ProxiesManager
-from spiders.novel_sites.fanqienovel.settings import FANQIE_URL, BASE_URL
+from spiders.novel_sites.fanqienovel.settings import FANQIE_URL, BASE_URL, CRAWL_RULE
 import random
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -416,22 +416,30 @@ class FanqieNovelSpider(BaseSpider):
         content_list = []
         selector = Selector(html)
         # 根据实际页面结构提取目标文本
-        books_list = selector.css('div.book-item-text > div.title a::attr(href)').getall()
-        for book in books_list:
-            book_content = ""
-            book_url = BASE_URL + book
-            book_html = self.fetch(book_url)
-            if book_html:
-                book_selector = Selector(book_html)
-                # 提取书籍信息
-                name = book_selector.css('div.info-name > h1::text').get()
-                book_content += name
-                labels = book_selector.css('div.info-label > span.info-label-grey::text').getall()
-                book_content += " ".join(labels)
-                segments = book_selector.css('div.page-abstract-content > p::text').getall()
-                book_content += " ".join(segments)
+        if CRAWL_RULE == "FULL":
+            books_list = selector.css('div.book-item-text > div.title a::attr(href)').getall()
+            for book in books_list:
+                book_content = ""
+                book_url = BASE_URL + book
+                book_html = self.fetch(book_url)
+                if book_html:
+                    book_selector = Selector(book_html)
+                    # 提取书籍信息
+                    name = book_selector.css('div.info-name > h1::text').get()
+                    book_content += name
+                    labels = book_selector.css('div.info-label > span.info-label-grey::text').getall()
+                    book_content += " ".join(labels)
+                    segments = book_selector.css('div.page-abstract-content > p::text').getall()
+                    book_content += " ".join(segments)
+                    content_list.append(book_content)
+                time.sleep(random.uniform(1, 2))
+        elif CRAWL_RULE == "SIMPLE":
+            book_titles = selector.css('div.book-item-text > div.title a::text').getall()
+            book_abstracts = selector.css('div.book-item-text > div.desc.abstract.font-DNMrHsV173Pd4pgy::text').getall()
+            for title, abstract in zip(book_titles, book_abstracts):
+                book_content = title + " " + abstract
                 content_list.append(book_content)
-            time.sleep(random.uniform(1, 2))
+
         if content_list:
             return content_list
         if not content_list:
