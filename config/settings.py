@@ -17,3 +17,12 @@ PROXY_POOL_CONFIG = {
     "update_interval": 60,  # 更新间隔（秒）
     "cache_file": os.path.join(BASE_DIR, 'proxies.json'),  # 缓存文件路径
 }
+
+# LLM API 配置
+LLM_API_CONFIG = {
+    "api_url": "https://api.siliconflow.cn/v1/chat/completions",
+    "api_key": "your_api_key_here",  # 替换为你的实际 API 密钥
+    "model": "Pro/deepseek-ai/DeepSeek-V3",
+}
+
+ANALYZER_MODE = "flashtext"  # 可选值: "flashtext" 或 "llm"

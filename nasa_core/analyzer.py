@@ -2,25 +2,33 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 from flashtext import KeywordProcessor
 from matplotlib.widgets import RadioButtons
+from nasa_core.llm_api import LLMAnalyzer
+import json
+from utils.logger import get_logger
+
+logger = get_logger()
 
 
-class Analyzer:
+class KeywordAnalyzer:
     def __init__(self, keyword_dict):
         """
         :param keyword_dict: 关键词字典，格式为 { "特征": ["关键词1", "关键词2", ...], ... }
         """
         self.keyword_dict = keyword_dict
+        self.llm_analyzer = LLMAnalyzer()
 
-    def count_keywords(self, text):
+    def count_keywords(self, text, mode='flashtext'):
         """
         根据关键词字典统计文本中各特征关键词出现的次数
         """
-        feature_counts = {}
-        for feature, synonyms in self.keyword_dict.items():
-            count = sum(text.count(syn) for syn in synonyms)
-            if count > 0:
-                feature_counts[feature] = count
-        return feature_counts
+        if mode == 'flashtext':
+            logger.info("使用 Flashtext 模式进行关键词统计")
+            return self.count_keywords_flashtext(text)
+        elif mode == 'llm':
+            logger.info("使用大语言模型进行关键词统计")
+            return self.count_keywords_llm(text)
+        else:
+            raise ValueError("Unsupported mode. Use 'flashtext' or 'llm'.")
 
     def count_keywords_flashtext(self, text_list):
         # 构造 KeywordProcessor，并启用最长匹配模式
@@ -38,42 +46,56 @@ class Analyzer:
                 counts[feature] = counts.get(feature, 0) + 1
         return counts
 
-    def generate_wordclouds(self, frequency_dict, font_path, width=800, height=600, background_color='white'):
+    def count_keywords_llm(self, text_list):
         """
-        根据每个词频数据生成对应的词云，同时合并所有词频数据生成一个'all'词云。
+        使用 LLM 模型统计文本中各特征关键词出现的次数
+        """
+        content = "\n".join(text_list)
+        try:
+            response = self.llm_analyzer.analyze(content)
+            # 解析 LLM 返回的数据
+            content = response.get("choices", [{}])[0].get("message", {}).get("content", "")
+            json_str = content.strip('```json\n').strip('```').strip()
+            counts = json.loads(json_str)
+            if isinstance(counts, dict):
+                return counts
+        except Exception as e:
+            print(f"LLM 分析失败: {e}")
+            return {}
 
-        :param frequency_list: 词频字典列表，每个字典格式为 {词: 词频, ...}
-        :param labels: 与词频数据一一对应的标签列表
-        :param font_path: 字体文件路径（用于支持中文）
-        :param width: 词云宽度
-        :param height: 词云高度
-        :param background_color: 背景色
-        :return: 一个字典，键为各标签（包括'all'），值为对应的词云对象
+
+class WordCloudGenerator:
+    def __init__(self, font_path, width=800, height=600, background_color='white'):
+        self.font_path = font_path
+        self.width = width
+        self.height = height
+        self.background_color = background_color
+
+    def generate_wordcloud(self, frequency_dict):
+        """
+        根据词频数据生成词云
         """
         wordcloud_dict = {}
-
-        # 为每个单独的词频数据生成词云
         for label, freq in frequency_dict.items():
             wc = WordCloud(
-                font_path=font_path,
-                background_color=background_color,
-                width=width,
-                height=height
+                font_path=self.font_path,
+                background_color=self.background_color,
+                width=self.width,
+                height=self.height
             ).generate_from_frequencies(freq)
             wordcloud_dict[label] = wc
 
-        # 合并所有词频数据生成'all'词云
+        # 合并所有词频数据生成 'all' 词云
         all_freq = {}
         for freq in frequency_dict.values():
             for word, count in freq.items():
                 all_freq[word] = all_freq.get(word, 0) + count
-        wc_all = WordCloud(
-            font_path=font_path,
-            background_color=background_color,
-            width=width,
-            height=height
+        wordcloud_dict['all'] = WordCloud(
+            font_path=self.font_path,
+            background_color=self.background_color,
+            width=self.width,
+            height=self.height
         ).generate_from_frequencies(all_freq)
-        wordcloud_dict['all'] = wc_all
 
         return wordcloud_dict
 
