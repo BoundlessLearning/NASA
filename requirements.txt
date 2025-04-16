@@ -3,4 +3,5 @@ matplotlib==3.10.1
 parsel==1.10.0
 PyYAML==6.0.2
 Requests==2.32.3
+selenium==4.31.0
 wordcloud==1.9.4

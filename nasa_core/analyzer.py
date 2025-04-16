@@ -30,7 +30,7 @@ class KeywordAnalyzer:
         else:
             raise ValueError("Unsupported mode. Use 'flashtext' or 'llm'.")
 
-    def count_keywords_flashtext(self, text_list):
+    def count_keywords_flashtext(self, all_text):
         # 构造 KeywordProcessor，并启用最长匹配模式
         kp = KeywordProcessor(case_sensitive=True)
         # 为了区分不同标签，可以分别添加关键词
@@ -40,19 +40,22 @@ class KeywordAnalyzer:
 
         counts = {}
         # extract_keywords 返回的是标签列表
-        for text in text_list:
-            features = set(kp.extract_keywords(text, span_info=False))
-            for feature in features:
-                counts[feature] = counts.get(feature, 0) + 1
+        for name, text_list in all_text.items():
+            for text in text_list:
+                features = set(kp.extract_keywords(text, span_info=False))
+                for feature in features:
+                    # counts[feature] = counts.get(feature, 0) + 1
+                    counts[name][feature] = counts.get(name, {}).get(feature, 0) + 1
         return counts
 
     def count_keywords_llm(self, text_list):
         """
         使用 LLM 模型统计文本中各特征关键词出现的次数
         """
-        content = "\n".join(text_list)
+        # content = "\n".join(text_list)
+        text_json = json.dumps(text_list, ensure_ascii=False)
         try:
-            response = self.llm_analyzer.analyze(content)
+            response = self.llm_analyzer.analyze(text_json)
             # 解析 LLM 返回的数据
             content = response.get("choices", [{}])[0].get("message", {}).get("content", "")
             json_str = content.strip('```json\n').strip('```').strip()
@@ -84,19 +87,6 @@ class WordCloudGenerator:
                 height=self.height
             ).generate_from_frequencies(freq)
             wordcloud_dict[label] = wc
-
-        # 合并所有词频数据生成 'all' 词云
-        all_freq = {}
-        for freq in frequency_dict.values():
-            for word, count in freq.items():
-                all_freq[word] = all_freq.get(word, 0) + count
-        wordcloud_dict['all'] = WordCloud(
-            font_path=self.font_path,
-            background_color=self.background_color,
-            width=self.width,
-            height=self.height
-        ).generate_from_frequencies(all_freq)
-
         return wordcloud_dict
 
     def show_wordcloud(self, wordcloud_dict):

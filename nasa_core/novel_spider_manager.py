@@ -79,7 +79,7 @@ class NovelSpiderManager:
         if not self.spiders:
             logger.warning("未注册任何爬虫实例")
             return
-
+        self.all_text = {}
         for name, spider_class in self.spiders.items():
             try:
                 # 执行爬取
@@ -88,13 +88,23 @@ class NovelSpiderManager:
                 if not processed_text:
                     logger.error(f"[{name}] 未爬取到有效内容")
                     continue
+                self.all_text[name] = processed_text
 
                 # 分析数据
-                analyzer = KeywordAnalyzer(self.keyword_dict)
-                self.feature_counts[name] = analyzer.count_keywords(processed_text, mode=ANALYZER_MODE)
+                # analyzer = KeywordAnalyzer(self.keyword_dict)
+                # self.feature_counts[name] = analyzer.count_keywords(processed_text, mode=ANALYZER_MODE)
             except Exception as e:
                 logger.error(f"[{name}] 执行失败：{e}")
                 continue
+        # 统计特征
+        if self.all_text:
+            analyzer = KeywordAnalyzer(self.keyword_dict)
+            self.feature_counts = analyzer.count_keywords(self.all_text, mode=ANALYZER_MODE)
+            all_frequency = {}
+            for freq in self.feature_counts.values():
+                for word, count in freq.items():
+                    all_frequency[word] = all_frequency.get(word, 0) + count
+            self.feature_counts["全部"] = all_frequency
         # 生成词云
         if self.feature_counts:
             word_cloud_generator = WordCloudGenerator(self.font_path)

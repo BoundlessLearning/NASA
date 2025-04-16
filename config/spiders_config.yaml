@@ -9,3 +9,5 @@ enabled_proxy_spiders:
 enabled_novel_spiders:
   - name: FanqieNovelSpider
     display_name: "番茄小说网"
+  - name: QidianNovelSpider
+    display_name: "起点中文网"

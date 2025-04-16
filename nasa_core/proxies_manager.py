@@ -6,7 +6,7 @@ import threading
 import json
 import os
 from datetime import datetime
-import queue
+import random
 import importlib
 import yaml
 from typing import Dict
@@ -37,7 +37,6 @@ class ProxiesManager():
             self.proxy_spiders: Dict[str, BaseSpider] = {}
             self.proxy_spiders_dir = os.path.join(BASE_DIR, "spiders", "proxy")
             self.proxy_pool = []
-            self.proxy_pool_queue = queue.Queue()
             self._crawl_executed = False
             self._initialized = True
             self.cache_file = PROXY_POOL_CONFIG.get("cache_file", os.path.join(BASE_DIR, "cache", "proxies_cache.json"))
@@ -97,8 +96,6 @@ class ProxiesManager():
                 self._refresh_proxies()
         else:
             self._refresh_proxies()
-        for proxy in self.proxy_pool:
-            self.proxy_pool_queue.put(proxy)
 
     def init_proxies(self):
         self._load_cache()
@@ -140,13 +137,17 @@ class ProxiesManager():
         logger.info(f"💾 代理池已缓存 ({len(self.proxy_pool)}个代理)")
 
     def get_proxies(self):
-        if not self.proxy_pool:
-            logger.warning("代理池为空")
-            return None
-        return self.proxy_pool_queue.get()
+        with self._lock:
+            if not self.proxy_pool:
+                logger.warning("代理池为空")
+                return None
+            proxy = random.choice(list(self.proxy_pool))
+            self.proxy_pool.remove(proxy)
+            return proxy
 
     def release_proxies(self, proxy):
-        self.proxy_pool_queue.put(proxy)
+        with self._lock:
+            self.proxy_pool.append(proxy)
 
     def get_proxies_count(self):
         return len(self.proxy_pool)
