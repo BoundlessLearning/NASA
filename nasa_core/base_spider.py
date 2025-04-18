@@ -50,15 +50,18 @@ class BaseSpider:
         options = Options()
         options.add_argument('--disable-blink-features=AutomationControlled')
         options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36')
-        # options.add_argument('--headless')  # 无头模式
-        options.add_argument("--disable-logging")  # 禁用日志
+        options.add_argument('--ignore-ssl-errors')
+        options.add_argument('--headless')  # 无头模式
+        options.add_argument("--log-level=3")
         if self.with_proxy:
             proxy = self.Proxy_manager.get_proxies()
             options.add_argument(f"--proxy-server={proxy['http']}" if proxy else "")
         retries = MAX_RETRY
+        driver = None
         for attempt in range(retries):
             try:
-                driver = webdriver.Chrome(options=options)
+                service = webdriver.ChromeService(log_output='./log/error.log')
+                driver = webdriver.Chrome(options=options, service=service)
                 driver.get(url)
                 html = driver.page_source
                 if html:

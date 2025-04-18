@@ -1,4 +1,5 @@
 import logging
+import os
 
 
 def get_logger(name=__name__):
@@ -10,5 +11,11 @@ def get_logger(name=__name__):
         ch = logging.StreamHandler()
         ch.setLevel(logging.INFO)
         ch.setFormatter(formatter)
+        if not os.path.exists('./log'):
+            os.makedirs('./log')
+        error_handler = logging.FileHandler('./log/error.log')
+        error_handler.setLevel(logging.ERROR)
+        error_handler.setFormatter(formatter)
+        logger.addHandler(error_handler)
         logger.addHandler(ch)
     return logger
